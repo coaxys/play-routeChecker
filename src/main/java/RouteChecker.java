@@ -71,20 +71,15 @@ public class RouteChecker {
         try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(new FileInputStream(htmlFile), "utf-8"))) {
             String line;
             String result;
-            String route;
             int lineIndex = 0;
-            Pattern pattern = Pattern.compile("@\\{(.*)\\(.*?\\)\\}");
+            Pattern pattern = Pattern.compile("@\\{(controllers.)?(.*?)\\(.*?\\)\\}");
             try {
                 while ((line = bufferedReader.readLine()) != null) {
                     lineIndex++;
                     Matcher matcher = pattern.matcher(line);
                     while (matcher.find()) {
-                        route = matcher.group();
-                        result = route.substring(2, route.indexOf("("));
-                        if (result.startsWith("controllers.")) {
-                            result = result.split("controllers.")[1];
-                        }
-                        if (!result.startsWith("'") && !routes.contains(result)) {
+                        result = matcher.group(2);
+                        if (!routes.contains(result)) {
                             System.out.println(Ansi.ansi().fg(Ansi.Color.RED).a("Erreur de routage :\nFichier : " + htmlFile.getName() + " (Ligne " + lineIndex + ")\nRoute erronnée : " + result + "\n").reset());
                             isOk = false;
                         }
@@ -104,8 +99,15 @@ public class RouteChecker {
                 String line;
                 try {
                     while ((line = bufferedReader.readLine()) != null) {
-                        if (!line.startsWith("#") && !line.isEmpty()) {
-                            routes.add(line.split("(\\s|\\t)+")[2]);
+                        String splittedLine[] = line.split("#");
+                        if (splittedLine.length > 1) {
+                            line = splittedLine[0];
+                        }
+                        if (!line.isEmpty()) {
+                            splittedLine = line.split("(\\s|/\\t)+");
+                            if (splittedLine.length > 2) {
+                                routes.add(splittedLine[2]);
+                            }
                         }
                     }
                 } catch (IOException ioe) {
