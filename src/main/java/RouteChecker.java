@@ -1,16 +1,19 @@
 import org.fusesource.jansi.Ansi;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 public class RouteChecker {
 
     private static final String VERSION = "1.1";
 
-    private List<String> routes = new ArrayList<>();
+    private List<Route> routes = new ArrayList<>();
     private boolean isOk = true;
 
     public static void main(String[] args) {
@@ -19,8 +22,7 @@ public class RouteChecker {
             System.out.println("Exemple : java -jar RouteChecker-" + VERSION + ".jar /home/pierre/Documents/coaxys/workspace/feazy-web/conf/routes /home/pierre/Documents/coaxys/workspace/feazy-web/app/views");
 
             System.out.println("\nEssai avec conf/routes et app/views\n");
-//            new RouteChecker().checkRoute("conf/routes", "app/views");
-            new RouteChecker().checkRoute("/home/pierre/Documents/coaxys/workspace/feazy-web/conf/routes", "/home/pierre/Documents/coaxys/workspace/feazy-web/app/views");
+            new RouteChecker().checkRoute("conf/routes", "app/views");
         } else {
             new RouteChecker().checkRoute(args[0], args[1]);
         }
@@ -70,7 +72,6 @@ public class RouteChecker {
     private void checkFileForRoutes(File htmlFile) {
         try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(new FileInputStream(htmlFile), "utf-8"))) {
             String line;
-            String result;
             int lineIndex = 0;
             Pattern pattern = Pattern.compile("@\\{(controllers.)?(.*?)\\(.*?\\)\\}");
             try {
@@ -78,9 +79,13 @@ public class RouteChecker {
                     lineIndex++;
                     Matcher matcher = pattern.matcher(line);
                     while (matcher.find()) {
-                        result = matcher.group(2);
-                        if (!routes.contains(result)) {
-                            System.out.println(Ansi.ansi().fg(Ansi.Color.RED).a("Erreur de routage :\nFichier : " + htmlFile.getName() + " (Ligne " + lineIndex + ")\nRoute erronnée : " + result + "\n").reset());
+                        final String action = matcher.group(2);
+
+                        boolean found = routes.stream().anyMatch(
+                                route -> route.getAction().equals(action)
+                        );
+                        if (!found) {
+                            System.out.println(Ansi.ansi().fg(Ansi.Color.RED).a("Erreur de routage :\nFichier : " + htmlFile.getName() + " (Ligne " + lineIndex + ")\nRoute erronnée : " + action + "\n").reset());
                             isOk = false;
                         }
                     }
@@ -95,24 +100,21 @@ public class RouteChecker {
 
     private void readRoutes(File routeFile) {
         if (routeFile.exists() && routeFile.isFile()) {
-            try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(new FileInputStream(routeFile), "utf-8"))) {
-                String line;
-                try {
-                    while ((line = bufferedReader.readLine()) != null) {
+            try {
+                Stream<String> lines = Files.lines(Paths.get(routeFile.getAbsolutePath()));
+                lines.forEach(line -> {
+                    if (!line.isEmpty()) {
                         String splittedLine[] = line.split("#");
                         if (splittedLine.length > 1) {
                             line = splittedLine[0];
                         }
-                        if (!line.isEmpty()) {
-                            splittedLine = line.split("(\\s|/\\t)+");
-                            if (splittedLine.length > 2) {
-                                routes.add(splittedLine[2]);
-                            }
+                        splittedLine = line.split("(\\s|/\\t)+");
+                        if (splittedLine.length > 2) {
+                            Route route = new Route(EMethods.getByName(splittedLine[0]), splittedLine[1], splittedLine[2]);
+                            routes.add(route);
                         }
                     }
-                } catch (IOException ioe) {
-                    ioe.printStackTrace();
-                }
+                });
             } catch (IOException e) {
                 e.printStackTrace();
             }
