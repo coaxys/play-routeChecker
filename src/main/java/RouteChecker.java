@@ -11,7 +11,7 @@ import java.util.stream.Stream;
 
 public class RouteChecker {
 
-    private static final String VERSION = "1.1";
+    private static final String VERSION = "1.2";
 
     private List<Route> routes = new ArrayList<>();
     private boolean isOk = true;
