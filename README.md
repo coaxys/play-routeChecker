@@ -6,7 +6,7 @@ Route Checker (for [Play! Framework 1.x](https://github.com/playframework/play1)
 Copyright (c) 2015 Coaxys <contact@coaxys.com>.
 Licensed under the [Apache 2 licence](http://www.apache.org/licenses/LICENSE-2.0).
 
-[Télécharger/Download](https://github.com/coaxys/play-routeChecker/tree/dev/target/RouteChecker-1.2.one-jar.jar)
+[Télécharger/Download](https://github.com/coaxys/play-routeChecker/blob/dev/target/RouteChecker-1.2.one-jar.jar?raw=true)
 
 Description
 -----------
